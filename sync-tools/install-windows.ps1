@@ -58,15 +58,18 @@ $arguments = "-lc `"DSH_SYNC_PROFILE='$profileForBash' '$scriptForBash' sync`""
 # The task starts bash in the profile directory so git never picks up a
 # different repository from the inherited working directory.
 $action = New-ScheduledTaskAction -Execute $bash -Argument $arguments -WorkingDirectory $profileDir
-$atLogon = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
+$atLogon = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
+# No -RepetitionDuration: [TimeSpan]::MaxValue serialises to P99999999DT23H59M59S,
+# which the Task Scheduler service rejects with 0x80041318. Omitting it means
+# "repeat indefinitely", which is what we want anyway.
 $every = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
-    -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes) `
-    -RepetitionDuration ([TimeSpan]::MaxValue)
+    -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes)
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries `
     -DontStopIfGoingOnBatteries -MultipleInstances IgnoreNew
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger @($atLogon, $every) `
-    -Settings $settings -Description "Commit and push the DSH profile to its git remote." -Force | Out-Null
+    -Settings $settings -Description "Commit and push the DSH profile to its git remote." -Force `
+    -ErrorAction Stop | Out-Null
 
 Write-Host "registered scheduled task '$TaskName' every $IntervalMinutes minutes"
 Write-Host "run it now:  schtasks /run /tn `"$TaskName`""
