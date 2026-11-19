@@ -69,13 +69,26 @@ if (-not $bash) {
 # Git Bash wants forward slashes; single quotes keep spaces in the path safe.
 $scriptForBash = $script -replace '\\', '/'
 $profileForBash = $profileDir -replace '\\', '/'
-# DSH_SYNC_PROFILE is passed inline: the task does not inherit the session
-# environment, so DSH_HOME may be absent when the task fires.
-$arguments = "-lc `"DSH_SYNC_PROFILE='$profileForBash' '$scriptForBash' sync`""
 
-# The task starts bash in the profile directory so git never picks up a
-# different repository from the inherited working directory.
-$action = New-ScheduledTaskAction -Execute $bash -Argument $arguments -WorkingDirectory $profileDir
+# wscript launches Git Bash with its window hidden. Task Scheduler starts console
+# programs visibly, so running bash directly would flash a black window on every
+# run. DSH_SYNC_PROFILE is passed inline: the task does not inherit the session
+# environment, so DSH_HOME may be absent when the task fires (dsh-sync-hidden.vbs
+# rebuilds the same command line that bash would have received).
+$hidden = Join-Path $PSScriptRoot "dsh-sync-hidden.vbs"
+$wscript = Get-Command wscript.exe -ErrorAction SilentlyContinue
+if ($wscript -and (Test-Path -LiteralPath $hidden)) {
+    $execute = $wscript.Source
+    $arguments = "//B //Nologo `"$hidden`" `"$bash`" `"$scriptForBash`" `"$profileForBash`""
+} else {
+    Write-Warning "wscript.exe or dsh-sync-hidden.vbs is missing: the task will flash a console window"
+    $execute = $bash
+    $arguments = "-lc `"DSH_SYNC_PROFILE='$profileForBash' '$scriptForBash' sync`""
+}
+
+# The task starts in the profile directory so git never picks up a different
+# repository from the inherited working directory.
+$action = New-ScheduledTaskAction -Execute $execute -Argument $arguments -WorkingDirectory $profileDir
 $atLogon = New-ScheduledTaskTrigger -AtLogOn -User "$env:USERDOMAIN\$env:USERNAME"
 # No -RepetitionDuration: [TimeSpan]::MaxValue serialises to P99999999DT23H59M59S,
 # which the Task Scheduler service rejects with 0x80041318. Omitting it means

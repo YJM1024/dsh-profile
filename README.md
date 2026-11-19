@@ -118,6 +118,9 @@ DSH 启动 profile 时按顺序叠 patch 层（`@deepseek-ai/dsh-app-boot` 的
    脚本把 `DSH_SYNC_PROFILE` 直接写进任务命令行，因为计划任务不继承会话环境变量。
    它还会在 `$DSH_HOME\cordis.patch.yml` 不存在时用 Windows 模板播种本机的
    配置层（已存在则不动）。
+   任务由 `wscript.exe` 转一层启动 Git Bash（`sync-tools/dsh-sync-hidden.vbs`，
+   `WScript.Shell.Run` 传窗口样式 0），所以运行时**不会弹黑窗口**；wscript 或该
+   文件缺失时退回直接跑 bash（会闪窗口），安装时会打印警告。
 
 ### Mac
 
