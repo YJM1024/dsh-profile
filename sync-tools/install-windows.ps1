@@ -10,6 +10,7 @@
 param(
     [int]$IntervalMinutes = 15,
     [string]$TaskName = "DSH profile sync",
+    [string]$DshHome,
     [switch]$Uninstall
 )
 
@@ -28,6 +29,23 @@ if (-not (Test-Path -LiteralPath $script)) {
 }
 if (-not (Test-Path -LiteralPath (Join-Path $profileDir ".git"))) {
     throw "$profileDir is not a git repository"
+}
+
+# Seed this machine's local patch layer on a fresh checkout. DSH reads
+# $DSH_HOME\cordis.patch.yml after the profile's cordis.patch.yml, so rows there
+# win on this machine alone; the file lives outside the profile and is never
+# committed or synced. An existing file is left untouched on purpose.
+$homeDir = if ($DshHome) { $DshHome } elseif ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE ".dsh" }
+$homePatch = Join-Path $homeDir "cordis.patch.yml"
+$homeTemplate = Join-Path $PSScriptRoot "machine\cordis.patch.windows.yml"
+if (Test-Path -LiteralPath $homePatch) {
+    Write-Host "machine-local layer kept as is: $homePatch"
+} elseif (Test-Path -LiteralPath $homeTemplate) {
+    New-Item -ItemType Directory -Path $homeDir -Force | Out-Null
+    Copy-Item -LiteralPath $homeTemplate -Destination $homePatch
+    Write-Host "seeded machine-local layer: $homePatch"
+} else {
+    Write-Warning "no machine-local template at $homeTemplate; skipping $homePatch"
 }
 
 # Git Bash, in order of preference: an explicit override, the portable Git
@@ -74,7 +92,7 @@ Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger @($atLogon, 
 Write-Host "registered scheduled task '$TaskName' every $IntervalMinutes minutes"
 Write-Host "run it now:  schtasks /run /tn `"$TaskName`""
 Write-Host "check it:    & `"$bash`" -lc `"'$scriptForBash' status`""
-Write-Host "log:         $($env:DSH_HOME)\dsh-sync.log"
+Write-Host "log:         $homeDir\dsh-sync.log"
 Write-Host ""
 Write-Host "First push needs credentials. Either the remote uses SSH and the key is"
 Write-Host "already loaded (recommended here), or run this once in Git Bash:"

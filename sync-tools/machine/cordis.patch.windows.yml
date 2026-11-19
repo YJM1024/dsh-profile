@@ -1,0 +1,24 @@
+# Machine-local patch layer for a Windows machine.
+#
+# Copy to %DSH_HOME%\cordis.patch.yml (the installers do this for you when the
+# target file does not exist yet). DSH reads it after the profile's own
+# cordis.patch.yml, so rows here win on this machine only. It sits outside the
+# profile directory, so it is never committed, never synced, and never conflicts.
+#
+# Edit the values freely: they describe this machine's screens and habits, not
+# the shared profile.
+- id: ui-settings-account
+  name: "@deepseek-ai/dsh-client-ui-settings-account"
+  config:
+    version: 1
+    step: done
+    purpose: office
+    process: compact
+    completion: completed
+    usage: compact
+    developerTools: false
+- id: ui-chat
+  name: "@deepseek-ai/dsh-client-ui-chat"
+  config:
+    transcriptView: compact
+    performanceUsage: compact

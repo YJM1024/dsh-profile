@@ -7,21 +7,9 @@
     provider: deepseek-account
     model: deepseek-flash
     reasoningEffort: high
-- id: ui-settings-account
-  name: "@deepseek-ai/dsh-client-ui-settings-account"
-  config:
-    version: 1
-    step: done
-    purpose: office
-    process: compact
-    completion: completed
-    usage: compact
-    developerTools: false
-- id: ui-chat
-  name: "@deepseek-ai/dsh-client-ui-chat"
-  config:
-    transcriptView: compact
-    performanceUsage: compact
+# ui-settings-account and ui-chat are intentionally absent here: they are
+# per-machine preferences, so each machine overrides them in its own
+# $DSH_HOME/cordis.patch.yml (which outranks this file).
 - id: ui-settings
   name: "@deepseek-ai/dsh-client-ui-settings"
   config:

@@ -1,0 +1,25 @@
+# Machine-local patch layer for a macOS machine.
+#
+# Copy to ~/.dsh/cordis.patch.yml, or to $DSH_HOME/cordis.patch.yml when DSH_HOME
+# points elsewhere (the installers do this for you when the target file does not
+# exist yet). DSH reads it after the profile's own cordis.patch.yml, so rows here
+# win on this machine only. It sits outside the profile directory, so it is never
+# committed, never synced, and never conflicts.
+#
+# Edit the values freely: they describe this machine's screens and habits, not
+# the shared profile.
+- id: ui-settings-account
+  name: "@deepseek-ai/dsh-client-ui-settings-account"
+  config:
+    version: 1
+    step: done
+    purpose: development
+    process: standard
+    completion: completed
+    usage: detailed
+    developerTools: true
+- id: ui-chat
+  name: "@deepseek-ai/dsh-client-ui-chat"
+  config:
+    transcriptView: standard
+    performanceUsage: detailed

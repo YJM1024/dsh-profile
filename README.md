@@ -8,8 +8,9 @@
 
 - bundle 共 **24 个**：本机 23 个 + Mac 侧独有的 `dsh-usage-stats`。
   （`@deepseek-ai/dsh-base` 和 `@deepseek-ai/dsh-web-app` 两台都有，所以 23 + 3 − 2 = 24。）
-- 插件配置以本机（Windows）现值为准；Mac 侧原来的 4 条配置是它的子集，
-  其中 `ui-settings-account`、`ui-chat` 两条取值不同，已统一为本机取值。
+- 插件配置以本机（Windows）现值为准；Mac 侧原来的 4 条配置是它的子集。
+  `ui-settings-account`、`ui-chat` 两条两台取值不同，属于「机器习惯」，
+  按下一节的办法留在各自本机，不进仓库。
 
 ## 同步什么
 
@@ -22,7 +23,41 @@
 | `node_modules/` | ❌ | 平台相关，各机器自己 install |
 | `.plugin-manager/`、`.dsh-market/` | ❌ | 本机日志与市场缓存 |
 
-永远不进仓库：`~/.dsh/.credentials.yaml`、会话、工作区、`dsh-runtimes/`。
+永远不进仓库：`~/.dsh/.credentials.yaml`、会话、工作区、`dsh-runtimes/`、
+以及每台机器自己的 `$DSH_HOME/cordis.patch.yml`（见下一节）。
+
+## 配置分层：共享的进仓库，每机的留在 `$DSH_HOME`
+
+DSH 启动 profile 时按顺序叠 patch 层（`@deepseek-ai/dsh-app-boot` 的
+`readProfilePatches`）：
+
+1. 每个 bundle 自带的 `cordis.patch.yml`
+2. profile 自己的 `cordis.patch.yml` ← 在仓库里，两台共享
+3. `$DSH_HOME/cordis.patch.yml` ← 只在这台机器上，**压过**第 2 层
+4. 命令行 `--patch` 覆盖
+
+所以「两台各保留各的」不需要新机制：第 3 层本来就是干这个的，而且它在 profile
+目录之外，git 看不见，永远不会冲突。
+
+目前放第 3 层的两条：
+
+| 行 id | Windows | macOS |
+|---|---|---|
+| `ui-settings-account` | office / compact / compact / 开发者工具关 | development / standard / detailed / 开发者工具开 |
+| `ui-chat` | compact / compact | standard / detailed |
+
+模板见 `sync-tools/machine/cordis.patch.windows.yml` 与 `…macos.yml`。两个安装
+脚本会在 `$DSH_HOME/cordis.patch.yml` **不存在**时拷一份过去，已存在就原样保留。
+
+想再加只属于本机的配置，直接写进 `$DSH_HOME/cordis.patch.yml`。注意 patch 是
+**整行替换**：覆盖某一行时，要把那一行的所有字段重新写全（漏字段会退回默认值）。
+
+**代价（已知且刻意接受）**：被 home 层覆盖的行，在设置界面里改不动。DSH 的配置
+编辑器只写 profile 的 `cordis.patch.yml`，写完后发现还有更高优先级层压着，会直接
+报 `Configuration for "<id>" is overridden by a home patch or command-line overlay`。
+所以这两项要改成**改这个文件**，不是改设置界面。想恢复「两边同一个值、界面可改」，
+把 `$DSH_HOME/cordis.patch.yml` 里对应行删掉，再把值写回 profile 的
+`cordis.patch.yml` 即可。
 
 ## 为什么有三个依赖放在 `vendor/`
 
@@ -81,6 +116,8 @@
    powershell -ExecutionPolicy Bypass -File sync-tools\install-windows.ps1
    ```
    脚本把 `DSH_SYNC_PROFILE` 直接写进任务命令行，因为计划任务不继承会话环境变量。
+   它还会在 `$DSH_HOME\cordis.patch.yml` 不存在时用 Windows 模板播种本机的
+   配置层（已存在则不动）。
 
 ### Mac
 
@@ -101,6 +138,7 @@ sh sync-tools/install-macos.sh 300      # 5 分钟
 
 它注册 `~/Library/LaunchAgents/com.yjm1024.dsh-sync.plist`，并把 `dsh-sync`
 软链到 `~/.local/bin/dsh-sync`，日志在 `${DSH_HOME:-$HOME/.dsh}/dsh-sync.log`。
+它同样会在 `$DSH_HOME/cordis.patch.yml` 不存在时播种 macOS 配置层。
 
 **新机器**（profile 还不存在）才需要 clone：
 

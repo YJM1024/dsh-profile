@@ -15,12 +15,27 @@ AGENTS="$HOME/Library/LaunchAgents"
 PLIST="$AGENTS/$LABEL.plist"
 BIN="$HOME/.local/bin"
 SCRIPT="$PROFILE/sync-tools/dsh-sync.sh"
-RUNLOG="${DSH_HOME:-$HOME/.dsh}/dsh-sync.log"
+DSHHOME="${DSH_HOME:-$HOME/.dsh}"
+RUNLOG="$DSHHOME/dsh-sync.log"
 
 [ -d "$PROFILE/.git" ] || { echo "not a git repository: $PROFILE" >&2; exit 1; }
 chmod +x "$SCRIPT"
 
-mkdir -p "$AGENTS" "$BIN" "${DSH_HOME:-$HOME/.dsh}"
+mkdir -p "$AGENTS" "$BIN" "$DSHHOME"
+
+# Seed this machine's local patch layer on a fresh checkout. DSH reads
+# $DSH_HOME/cordis.patch.yml after the profile's cordis.patch.yml, so rows there
+# win on this machine alone; the file lives outside the profile and is never
+# committed or synced. An existing file is left untouched on purpose.
+TEMPLATE="$HERE/machine/cordis.patch.macos.yml"
+if [ -f "$DSHHOME/cordis.patch.yml" ]; then
+    printf 'machine-local layer kept as is: %s\n' "$DSHHOME/cordis.patch.yml"
+elif [ -f "$TEMPLATE" ]; then
+    cp "$TEMPLATE" "$DSHHOME/cordis.patch.yml"
+    printf 'seeded machine-local layer: %s\n' "$DSHHOME/cordis.patch.yml"
+else
+    printf 'warning: no machine-local template at %s\n' "$TEMPLATE" >&2
+fi
 
 cat >"$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
