@@ -58,9 +58,14 @@
        HostName ssh.github.com
        Port 443
        User git
+       AddressFamily inet
+       ConnectTimeout 15
        IdentitiesOnly yes
        IdentityFile ~/.ssh/id_ed25519
    ```
+   `AddressFamily inet` 不是可选项：本机 DNS 对 `ssh.github.com` 的 **AAAA 查询会
+   返回 server failure**，ssh 双栈解析偶尔直接失败（`Could not resolve hostname`），
+   锁成 IPv4 就稳定了。
    公钥加到 GitHub 后，`git -C <profile> ls-remote` 应该能列出 `refs/heads/main`。
    仓库转 private 之后这条路照样可用，不需要 token。
 3. **依赖**：npmjs 官方源在本机约 170 KB/s，npmmirror 约 1.3 MB/s，安装时指定后者：
@@ -139,4 +144,10 @@ git add -A && git rebase --continue
 
 - 仓库**必须私有**：以后给插件配 API key 会写进 `cordis.patch.yml`。
 - 定时任务只做 git 操作，**从不**自动 `pnpm install`（会联网、会触发构建审批）。
+  所以 pull 下来发现多了插件，要手动补一次 install 再重启 DSH。
 - 两台机器同时改 `cordis.patch.yml` 才会冲突；行数很少，正常碰不到。
+- **Windows 的 profile 在 Dropbox 里**（`D:\Dropbox\dsh-data\profiles\desktop`），
+  也就是 `.git` 和 `node_modules` 都在被 Dropbox 同步。Dropbox 不会理解 git 的
+  内部结构，如果它给 `.git/` 里的文件生成「冲突副本」，仓库可能损坏。建议在
+  Dropbox 设置里排除 `profiles\desktop\.git`、`node_modules` 和 `.dsh-market`，
+  只让 Dropbox 保留数据文件，git 自己走 GitHub 同步。
