@@ -2,14 +2,48 @@
   "name": "dsh-profile-desktop",
   "private": true,
   "dependencies": {
-    "dsh-usage-stats": "github:ailawu0409/dsh-usage-stats"
+    "@local/dsh-preset-council": "file:./vendor/dsh-preset-council",
+    "billion-context": "0.1.216",
+    "ds-harness-remote": "0.6.5",
+    "dsh-achievements": "file:./vendor/dsh-achievements-0.1.7.tgz",
+    "dsh-github": "github:KNLCXY/dsh-github#ff41190d6f8abc2d6e83487a531cb6991878512c",
+    "dsh-github-publish": "github:Charlestam218/dsh-github-publish#8281be51ac0ea302e45bd39153625c8cc677e1fa",
+    "dsh-pet": "0.4.8",
+    "dsh-profile-stats": "^2.4.21",
+    "dsh-skin-whale-fantasy": "https://codeload.github.com/jiangwangyang/dsh-skin-whale-fantasy/tar.gz/2f22b28bedc2deebf751d16aee5b9edbb282717a",
+    "dsh-token-usage-dashboard": "file:./vendor/dsh-token-usage-dashboard-1.0.1.tgz",
+    "dsh-usage-stats": "https://codeload.github.com/ailawu0409/dsh-usage-stats/tar.gz/4baa411dc9492a06c6b1d9ccbbb6920a67728898",
+    "dsh-video-skin": "0.1.6",
+    "dsh-whale-widget": "0.4.2",
+    "dshmarket": "1.73.19"
   },
   "dsh": {
     "profile": {
       "bundles": [
         "@deepseek-ai/dsh-base",
         "@deepseek-ai/dsh-web-app",
-        "dsh-usage-stats"
+        "@deepseek-ai/dsh-experimental-voice-input-bundle",
+        "@deepseek-ai/dsh-experimental-tool-worktree",
+        "@deepseek-ai/dsh-experimental-cot-translation-bundle",
+        "@deepseek-ai/dsh-experimental-terminal-bundle",
+        "@deepseek-ai/dsh-experimental-session-search",
+        "@deepseek-ai/dsh-experimental-session-titles-bundle",
+        "@deepseek-ai/dsh-experimental-plugin-market-bundle",
+        "@deepseek-ai/dsh-experimental-ralph-bundle",
+        "dsh-github-publish",
+        "dsh-github",
+        "dshmarket",
+        "dsh-video-skin",
+        "dsh-skin-whale-fantasy",
+        "dsh-pet",
+        "dsh-whale-widget",
+        "dsh-profile-stats",
+        "dsh-usage-stats",
+        "dsh-achievements",
+        "dsh-token-usage-dashboard",
+        "@local/dsh-preset-council",
+        "ds-harness-remote",
+        "billion-context"
       ]
     }
   }

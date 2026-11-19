@@ -30,21 +30,34 @@ if (-not (Test-Path -LiteralPath (Join-Path $profileDir ".git"))) {
     throw "$profileDir is not a git repository"
 }
 
+# Git Bash, in order of preference: an explicit override, the portable Git
+# bundled under DSH_HOME, a normal Git for Windows install, then PATH.
 $candidates = @(
+    $env:DSH_GIT_BASH,
+    $(if ($env:DSH_HOME) { Join-Path $env:DSH_HOME "tools\PortableGit\bin\bash.exe" }),
     (Join-Path $env:ProgramFiles "Git\bin\bash.exe"),
-    (Join-Path ${env:ProgramFiles(x86)} "Git\bin\bash.exe"),
+    $(if (${env:ProgramFiles(x86)}) { Join-Path ${env:ProgramFiles(x86)} "Git\bin\bash.exe" }),
     (Join-Path $env:LOCALAPPDATA "Programs\Git\bin\bash.exe")
-)
-$bash = $candidates | Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+$bash = $candidates | Select-Object -First 1
 if (-not $bash) {
-    throw "Git Bash not found. Install Git for Windows first (https://git-scm.com/download/win)."
+    $onPath = Get-Command bash.exe -ErrorAction SilentlyContinue
+    if ($onPath) { $bash = $onPath.Source }
+}
+if (-not $bash) {
+    throw "Git Bash not found. Set DSH_GIT_BASH, or install Git for Windows (https://git-scm.com/download/win)."
 }
 
-# Git Bash wants forward slashes and a quoted path.
+# Git Bash wants forward slashes; single quotes keep spaces in the path safe.
 $scriptForBash = $script -replace '\\', '/'
-$arguments = "-lc `"`"$scriptForBash`" sync`""
+$profileForBash = $profileDir -replace '\\', '/'
+# DSH_SYNC_PROFILE is passed inline: the task does not inherit the session
+# environment, so DSH_HOME may be absent when the task fires.
+$arguments = "-lc `"DSH_SYNC_PROFILE='$profileForBash' '$scriptForBash' sync`""
 
-$action = New-ScheduledTaskAction -Execute $bash -Argument $arguments
+# The task starts bash in the profile directory so git never picks up a
+# different repository from the inherited working directory.
+$action = New-ScheduledTaskAction -Execute $bash -Argument $arguments -WorkingDirectory $profileDir
 $atLogon = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $every = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
     -RepetitionInterval (New-TimeSpan -Minutes $IntervalMinutes) `
@@ -57,8 +70,9 @@ Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger @($atLogon, 
 
 Write-Host "registered scheduled task '$TaskName' every $IntervalMinutes minutes"
 Write-Host "run it now:  schtasks /run /tn `"$TaskName`""
-Write-Host "check it:    bash `"$scriptForBash`" status"
+Write-Host "check it:    bash -lc `"'$scriptForBash' status`""
 Write-Host ""
-Write-Host "First push needs credentials: open Git Bash and run"
-Write-Host "  cd ~/.dsh/profiles/desktop && git push"
-Write-Host "Git Credential Manager opens a browser once, then keeps the token."
+Write-Host "First push needs credentials. Either the remote uses SSH and the key is"
+Write-Host "already loaded (recommended here), or run this once in Git Bash:"
+Write-Host "  cd `"$profileForBash`" && git push"
+Write-Host "and satisfy the credential prompt it shows."

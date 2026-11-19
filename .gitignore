@@ -1,9 +1,16 @@
-# Installed plugin code. Platform-specific: install it on each machine.
+# 插件代码：平台相关，每台机器各自 install
 node_modules/
 .plugin-manager/
 
-# Local noise
+# 插件市场缓存（3 MB，每次打开市场都会变）
+.dsh-market/
+
+# 本机噪声
 .DS_Store
 Thumbs.db
 *.log
 pnpm-debug.log*
+
+# 冲突副本（Dropbox 或手工合并留下）
+*冲突副本*
+*.bak

@@ -1,0 +1,90 @@
+# 「三模型会诊」Agent 预设（DSH 自定义模式）
+#
+# 作用：把同一份脑暴同时发给三个固定路由的子代理，各自独立出方案，
+# 由主持人（本会话主模型）汇总对比，再由用户拍板分工。
+#
+# 路由与模型可改：
+#   openai          + gpt-6-astra      （OpenAI API Key）
+#   google          + gemini-4-carbon  （Gemini API Key；Carbon 需先加进模型列表）
+#   deepseek-account + deepseek-flash  （DeepSeek 账号，已登录）
+#
+# 子代理使用 standard 预设起步，避免继承主持人的人格与工具。
+- insert:
+    - id: preset-council
+      name: '@deepseek-ai/dsh-agent-preset'
+      config:
+        id: council
+        name: 三模型会诊
+        description: 脑暴同时发给 GPT / Gemini / DeepSeek 三个子代理，各自独立出方案，主持人对比汇总后再分工。
+        order: 50
+        plugins:
+          - id: persona
+            name: '@deepseek-ai/dsh-persona'
+            config:
+              prefix: |
+                你是「三模型会诊」的主持人。你的职责是把用户的想法分发给三个互相独立的子代理，
+                比较它们的方案，而不是自己先给答案。
+
+                每轮收到用户的想法后：
+                1. 需要澄清时最多问 1 个关键问题；否则直接进入下一步。
+                2. 在同一轮里同时启动 ask_gpt、ask_gemini、ask_deepseek 三个子代理。
+                   给每个子代理同一份任务书：用户原话、背景、约束、期望输出结构
+                   （目标 / 方案要点 / 架构与工具 / 风险与失败路径 / 实施步骤 / 成本估算）。
+                   明确要求：独立完成，不得参考其他模型的方案，不得读取其他子代理的文件。
+                   要求每个子代理把完整方案写入 council/<模型名>.md，并把要点直接返回。
+                3. 收齐三份后输出对比表：核心思路、架构、可落地性、成本、风险、与约束的匹配度；
+                   标出共识与分歧。
+                4. 给出推荐组合（可以取长补短），让用户通过选项选择。
+                5. 用户选定后再拆任务分工；不要替用户拍板。
+          - id: agent-instructions
+            name: '@deepseek-ai/dsh-agent-instructions'
+            config:
+              maxBytes: 65536
+          - id: time-context
+            name: '@deepseek-ai/dsh-time-context'
+          - id: tool-fs
+            name: '@deepseek-ai/dsh-tool-fs'
+            config:
+              applyPatch: false
+          - id: ask-gpt
+            name: '@deepseek-ai/dsh-tool-subagent'
+            config:
+              provider: spawn
+              toolName: ask_gpt
+              agentPreset: standard
+              agentOptions: { provider: openai, model: gpt-6-astra }
+          - id: ask-gemini
+            name: '@deepseek-ai/dsh-tool-subagent'
+            config:
+              provider: spawn
+              toolName: ask_gemini
+              agentPreset: standard
+              agentOptions: { provider: google, model: gemini-4-carbon }
+          - id: ask-deepseek
+            name: '@deepseek-ai/dsh-tool-subagent'
+            config:
+              provider: spawn
+              toolName: ask_deepseek
+              agentPreset: standard
+              agentOptions: { provider: deepseek-account, model: deepseek-flash }
+          - id: tool-ask-user
+            name: '@deepseek-ai/dsh-tool-ask-user'
+          - id: tool-todo
+            name: '@deepseek-ai/dsh-tool-todo'
+          - id: compaction
+            name: cordis:group
+            group: true
+            isolate:
+              compaction: true
+              toolResultPruner: true
+            config:
+              - id: compaction-basic
+                name: '@deepseek-ai/dsh-compaction-basic'
+              - id: command-compact
+                name: '@deepseek-ai/dsh-command-compact'
+              - id: tool-result-pruner
+                name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+                config:
+                  thresholdChars: 8192
+                  headChars: 4096
+                  tailChars: 1024

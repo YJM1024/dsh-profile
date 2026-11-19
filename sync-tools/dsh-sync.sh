@@ -1,19 +1,37 @@
 #!/bin/sh
-# dsh-sync — mirror this DSH profile to a git remote.
+# dsh-sync — mirror this DSH profile to a git remote (bidirectional).
 #
-#   dsh-sync status   show branch, remote and pending changes
+#   dsh-sync status   show profile path, branch, remote and pending changes
 #   dsh-sync push     commit local changes, then push
 #   dsh-sync pull     fetch and rebase onto the remote branch
 #   dsh-sync sync     commit + pull + push (what the timer runs)
 #
 # Overridable with DSH_SYNC_PROFILE, DSH_SYNC_REMOTE, DSH_SYNC_BRANCH,
-# DSH_SYNC_LOG.
+# DSH_SYNC_LOG. DSH_HOME is honoured, so relocated installs work.
 set -eu
 
-PROFILE=${DSH_SYNC_PROFILE:-"$HOME/.dsh/profiles/desktop"}
+resolve_profile() {
+  if [ -n "${DSH_SYNC_PROFILE:-}" ]; then
+    printf '%s' "$DSH_SYNC_PROFILE"
+  elif [ -n "${DSH_HOME:-}" ]; then
+    printf '%s/profiles/desktop' "$DSH_HOME"
+  else
+    printf '%s/.dsh/profiles/desktop' "$HOME"
+  fi
+}
+
+PROFILE=$(resolve_profile)
+LOG=${DSH_SYNC_LOG:-"${DSH_HOME:-$HOME/.dsh}/dsh-sync.log"}
+# Windows/Git Bash: DSH_HOME comes from the Windows environment with
+# backslashes, which the shell cannot use as a path.
+if command -v cygpath >/dev/null 2>&1; then
+  PROFILE=$(cygpath -u "$PROFILE")
+  LOG=$(cygpath -u "$LOG")
+fi
+
 REMOTE=${DSH_SYNC_REMOTE:-origin}
 BRANCH=${DSH_SYNC_BRANCH:-main}
-LOG=${DSH_SYNC_LOG:-"${DSH_HOME:-$HOME/.dsh}/dsh-sync.log"}
+GIT="git -C $PROFILE -c core.quotepath=false"
 
 log() {
   printf '%s %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$*" >>"$LOG" 2>/dev/null || true
@@ -29,6 +47,7 @@ die() {
   exit 1
 }
 
+[ -d "$PROFILE" ] || die "profile directory not found: $PROFILE"
 [ -d "$PROFILE/.git" ] || die "not a git repository: $PROFILE"
 
 LOCKDIR="${TMPDIR:-/tmp}/dsh-sync.lock"
@@ -40,11 +59,21 @@ acquire_lock() {
     fi
     mkdir "$LOCKDIR" 2>/dev/null || die "another dsh-sync is running"
   fi
-  trap 'rmdir "$LOCKDIR" 2>/dev/null || true' EXIT INT TERM
+  trap 'rmdir "$LOCKDIR" 2>/dev/null || true' EXIT
+  trap 'rmdir "$LOCKDIR" 2>/dev/null || true; exit 130' INT
+  trap 'rmdir "$LOCKDIR" 2>/dev/null || true; exit 143' TERM
 }
 
 have_remote() {
-  git -C "$PROFILE" remote get-url "$REMOTE" >/dev/null 2>&1
+  $GIT remote get-url "$REMOTE" >/dev/null 2>&1
+}
+
+require_identity() {
+  $GIT config --get user.email >/dev/null 2>&1 && return 0
+  say "error: git has no user.email; set it once with:"
+  say "  git config --global user.name  \"Your Name\""
+  say "  git config --global user.email \"you@example.com\""
+  exit 1
 }
 
 host_label() {
@@ -52,77 +81,80 @@ host_label() {
 }
 
 commit_local() {
-  git -C "$PROFILE" add -A
-  if git -C "$PROFILE" diff --cached --quiet; then
+  $GIT add -A
+  if $GIT diff --cached --quiet; then
     log "no local changes"
     return 0
   fi
-  git -C "$PROFILE" commit -q -m "sync: $(host_label) $(date '+%Y-%m-%d %H:%M:%S')"
+  $GIT commit -q -m "sync: $(host_label) $(date '+%Y-%m-%d %H:%M:%S')"
   say "committed local changes"
 }
 
 pull_remote() {
   have_remote || { say "no remote '$REMOTE' configured; pull skipped"; return 0; }
-  before=$(git -C "$PROFILE" rev-parse HEAD 2>/dev/null || true)
-  if ! git -C "$PROFILE" fetch -q "$REMOTE" "$BRANCH" 2>>"$LOG"; then
-    say "fetch failed (network, or credentials not stored yet)"
+  before=$($GIT rev-parse HEAD 2>/dev/null || true)
+  if ! $GIT fetch -q "$REMOTE" "$BRANCH" 2>>"$LOG"; then
+    say "fetch failed (network, or credentials not stored yet); see $LOG"
     return 1
   fi
-  if ! git -C "$PROFILE" rev-parse --verify -q "refs/remotes/$REMOTE/$BRANCH" >/dev/null; then
+  if ! $GIT rev-parse --verify -q "refs/remotes/$REMOTE/$BRANCH" >/dev/null; then
     say "remote branch $REMOTE/$BRANCH does not exist yet; pull skipped"
     return 0
   fi
-  if git -C "$PROFILE" merge-base --is-ancestor "refs/remotes/$REMOTE/$BRANCH" HEAD; then
+  if $GIT merge-base --is-ancestor "refs/remotes/$REMOTE/$BRANCH" HEAD; then
     log "already up to date"
     return 0
   fi
-  if git -C "$PROFILE" rebase --autostash "$REMOTE/$BRANCH" >/dev/null 2>&1; then
+  if $GIT rebase --autostash "$REMOTE/$BRANCH" >/dev/null 2>&1; then
     say "pulled $REMOTE/$BRANCH"
-    after=$(git -C "$PROFILE" rev-parse HEAD 2>/dev/null || true)
+    after=$($GIT rev-parse HEAD 2>/dev/null || true)
     if [ -n "$before" ] && [ -n "$after" ] && \
-      [ -n "$(git -C "$PROFILE" diff --name-only "$before" "$after" -- pnpm-lock.yaml package.json 2>/dev/null)" ]; then
-      say "plugin manifest changed: install dependencies before using new plugins"
+      [ -n "$($GIT diff --name-only "$before" "$after" -- pnpm-lock.yaml package.json 2>/dev/null)" ]; then
+      say "manifest changed: run 'pnpm install' in $PROFILE, then restart DSH"
     fi
     return 0
   fi
   # Leave a usable working tree and let a human decide.
-  git -C "$PROFILE" rebase --abort >/dev/null 2>&1 || true
-  say "rebase conflict: run 'git -C $PROFILE status' and resolve by hand"
+  $GIT rebase --abort >/dev/null 2>&1 || true
+  say "rebase conflict: run 'git -C \"$PROFILE\" status' and resolve by hand"
   return 1
 }
 
 push_remote() {
   have_remote || { say "no remote '$REMOTE' configured; push skipped"; return 0; }
-  if git -C "$PROFILE" rev-parse --verify -q "refs/remotes/$REMOTE/$BRANCH" >/dev/null; then
-    if [ "$(git -C "$PROFILE" rev-list --count "refs/remotes/$REMOTE/$BRANCH..HEAD")" = "0" ]; then
+  if $GIT rev-parse --verify -q "refs/remotes/$REMOTE/$BRANCH" >/dev/null; then
+    if [ "$($GIT rev-list --count "refs/remotes/$REMOTE/$BRANCH..HEAD")" = "0" ]; then
       log "nothing to push"
       return 0
     fi
   fi
-  if git -C "$PROFILE" push -q -u "$REMOTE" "$BRANCH" 2>>"$LOG"; then
+  if $GIT push -q -u "$REMOTE" "$BRANCH" 2>>"$LOG"; then
     say "pushed to $REMOTE/$BRANCH"
   else
-    say "push failed (network, or credentials not stored yet)"
+    say "push failed (network, or credentials not stored yet); see $LOG"
     return 1
   fi
 }
 
 show_status() {
   say "profile: $PROFILE"
-  say "remote:  $(git -C "$PROFILE" remote get-url "$REMOTE" 2>/dev/null || echo '(not set)')"
-  git -C "$PROFILE" status --short --branch
-  git -C "$PROFILE" log -1 --format='last commit: %h %s (%cr)' 2>/dev/null || true
+  say "log:     $LOG"
+  say "remote:  $($GIT remote get-url "$REMOTE" 2>/dev/null || echo '(not set)')"
+  $GIT status --short --branch
+  $GIT log -1 --format='last commit: %h %s (%cr)' 2>/dev/null || true
 }
 
 case "${1:-sync}" in
   sync)
     acquire_lock
+    require_identity
     commit_local
     pull_remote || exit 1
     push_remote
     ;;
   push)
     acquire_lock
+    require_identity
     commit_local
     push_remote
     ;;
