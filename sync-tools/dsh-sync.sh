@@ -63,6 +63,7 @@ commit_local() {
 
 pull_remote() {
   have_remote || { say "no remote '$REMOTE' configured; pull skipped"; return 0; }
+  before=$(git -C "$PROFILE" rev-parse HEAD 2>/dev/null || true)
   if ! git -C "$PROFILE" fetch -q "$REMOTE" "$BRANCH" 2>>"$LOG"; then
     say "fetch failed (network, or credentials not stored yet)"
     return 1
@@ -77,6 +78,11 @@ pull_remote() {
   fi
   if git -C "$PROFILE" rebase --autostash "$REMOTE/$BRANCH" >/dev/null 2>&1; then
     say "pulled $REMOTE/$BRANCH"
+    after=$(git -C "$PROFILE" rev-parse HEAD 2>/dev/null || true)
+    if [ -n "$before" ] && [ -n "$after" ] && \
+      [ -n "$(git -C "$PROFILE" diff --name-only "$before" "$after" -- pnpm-lock.yaml package.json 2>/dev/null)" ]; then
+      say "plugin manifest changed: install dependencies before using new plugins"
+    fi
     return 0
   fi
   # Leave a usable working tree and let a human decide.
