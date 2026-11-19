@@ -73,7 +73,8 @@ Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger @($atLogon, 
 
 Write-Host "registered scheduled task '$TaskName' every $IntervalMinutes minutes"
 Write-Host "run it now:  schtasks /run /tn `"$TaskName`""
-Write-Host "check it:    bash -lc `"'$scriptForBash' status`""
+Write-Host "check it:    & `"$bash`" -lc `"'$scriptForBash' status`""
+Write-Host "log:         $($env:DSH_HOME)\dsh-sync.log"
 Write-Host ""
 Write-Host "First push needs credentials. Either the remote uses SSH and the key is"
 Write-Host "already loaded (recommended here), or run this once in Git Bash:"
