@@ -28,11 +28,11 @@
 
 ```sh
 cd ~/.dsh/profiles/desktop
-git remote add origin https://github.com/<你的用户名>/dsh-profile.git
+git remote add origin git@github.com:YJM1024/dsh-profile.git
 git push -u origin main
 ```
 
-第一次 push 会要求登录，macOS 会把凭据存进钥匙串，之后定时任务不再询问。
+Mac 走 SSH（`~/.ssh/id_ed25519` 已经生成好，公钥已加到 GitHub），没有令牌过期问题。
 
 装定时任务：
 
@@ -52,10 +52,23 @@ Git Credential Manager）。然后完全退出 DSH：
 ```sh
 # 如果 %USERPROFILE%\.dsh\profiles\desktop 已经存在，先改名备份
 cd %USERPROFILE%\.dsh\profiles
-git clone https://github.com/<你的用户名>/dsh-profile.git desktop
+git clone https://github.com/YJM1024/dsh-profile.git desktop
 ```
 
-第一次 push 要走一次浏览器授权，在 Git Bash 里手动执行：
+如果这台以前装过别的插件，它们不会出现在仓库的清单里；需要的话在 Mac 上把同样的
+插件装上，让仓库成为唯一事实来源。
+
+`node_modules` 不跨平台，克隆下来是空的，要用 DSH 自带的 Node + pnpm 装一次
+（PowerShell，不需要另外装 Node）：
+
+```powershell
+$rt = "$env:USERPROFILE\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies"
+$node = @("$rt\node\node.exe", "$rt\node\bin\node.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
+Set-Location "$env:USERPROFILE\.dsh\profiles\desktop"
+& $node "$rt\pnpm\bin\pnpm.cjs" install
+```
+
+第一次 push 要走一次浏览器授权（Git Credential Manager 会弹窗），在 Git Bash 里执行：
 
 ```sh
 cd ~/.dsh/profiles/desktop && git push
@@ -66,9 +79,6 @@ cd ~/.dsh/profiles/desktop && git push
 ```powershell
 powershell -ExecutionPolicy Bypass -File sync-tools\install-windows.ps1
 ```
-
-最后打开 DSH，在插件页把清单里声明、但这台还没装的插件装一次
-（`node_modules` 不跨平台，必须各自装）。
 
 ## 日常使用
 
