@@ -1,0 +1,24 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: false
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      dsh-usage-stats:
+        specifier: github:ailawu0409/dsh-usage-stats
+        version: https://codeload.github.com/ailawu0409/dsh-usage-stats/tar.gz/21c8f4945a6968d9def8de2207215cadb78802b4
+
+packages:
+
+  dsh-usage-stats@https://codeload.github.com/ailawu0409/dsh-usage-stats/tar.gz/21c8f4945a6968d9def8de2207215cadb78802b4:
+    resolution: {gitHosted: true, integrity: sha512-T6cLnN6lkM2FttF/Lu4ThKj/7SQhdUz4gduOy55txNh/K5TJ/4jUDg6yhvve27xTFc0hL+rDxfjXvDAXtZHcKQ==, tarball: https://codeload.github.com/ailawu0409/dsh-usage-stats/tar.gz/21c8f4945a6968d9def8de2207215cadb78802b4}
+    version: 0.3.0
+    engines: {node: '>=22'}
+
+snapshots:
+
+  dsh-usage-stats@https://codeload.github.com/ailawu0409/dsh-usage-stats/tar.gz/21c8f4945a6968d9def8de2207215cadb78802b4: {}

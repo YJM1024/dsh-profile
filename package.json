@@ -1,0 +1,16 @@
+{
+  "name": "dsh-profile-desktop",
+  "private": true,
+  "dependencies": {
+    "dsh-usage-stats": "github:ailawu0409/dsh-usage-stats"
+  },
+  "dsh": {
+    "profile": {
+      "bundles": [
+        "@deepseek-ai/dsh-base",
+        "@deepseek-ai/dsh-web-app",
+        "dsh-usage-stats"
+      ]
+    }
+  }
+}

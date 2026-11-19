@@ -1,0 +1,9 @@
+# Installed plugin code. Platform-specific: install it on each machine.
+node_modules/
+.plugin-manager/
+
+# Local noise
+.DS_Store
+Thumbs.db
+*.log
+pnpm-debug.log*

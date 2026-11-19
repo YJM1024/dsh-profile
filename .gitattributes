@@ -1,0 +1,3 @@
+# Store and check out everything with LF so YAML/JSON behave the same on
+# macOS and Windows, and the shell scripts stay executable in Git Bash.
+* text=auto eol=lf
