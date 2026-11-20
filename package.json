@@ -8,6 +8,7 @@
     "dsh-achievements": "file:./vendor/dsh-achievements-0.1.7.tgz",
     "dsh-context": "^0.86.0",
     "dsh-context-truth": "^0.3.4",
+    "dsh-drawai": "^0.4.8",
     "dsh-github": "github:KNLCXY/dsh-github#ff41190d6f8abc2d6e83487a531cb6991878512c",
     "dsh-github-publish": "github:Charlestam218/dsh-github-publish#8281be51ac0ea302e45bd39153625c8cc677e1fa",
     "dsh-guizang-design": "^0.1.4",
@@ -54,7 +55,9 @@
         "dsh-permission-rules",
         "dsh-unlag",
         "dsh-context-truth",
-        "dsh-vision-router"
+        "dsh-vision-router",
+        "dsh-guizang-design",
+        "dsh-drawai"
       ]
     }
   }
