@@ -7,8 +7,10 @@
     "ds-harness-remote": "0.6.5",
     "dsh-achievements": "file:./vendor/dsh-achievements-0.1.7.tgz",
     "dsh-context": "^0.86.0",
+    "dsh-context-truth": "^0.3.4",
     "dsh-github": "github:KNLCXY/dsh-github#ff41190d6f8abc2d6e83487a531cb6991878512c",
     "dsh-github-publish": "github:Charlestam218/dsh-github-publish#8281be51ac0ea302e45bd39153625c8cc677e1fa",
+    "dsh-guizang-design": "^0.1.4",
     "dsh-permission-rules": "^0.8.3",
     "dsh-pet": "0.4.8",
     "dsh-profile-stats": "^2.4.21",
@@ -17,6 +19,7 @@
     "dsh-unlag": "^1.17.8",
     "dsh-usage-stats": "https://codeload.github.com/ailawu0409/dsh-usage-stats/tar.gz/4baa411dc9492a06c6b1d9ccbbb6920a67728898",
     "dsh-video-skin": "0.1.6",
+    "dsh-vision-router": "^3.4.0",
     "dsh-whale-widget": "0.4.2",
     "dshmarket": "1.73.19"
   },
@@ -49,7 +52,9 @@
         "billion-context",
         "dsh-context",
         "dsh-permission-rules",
-        "dsh-unlag"
+        "dsh-unlag",
+        "dsh-context-truth",
+        "dsh-vision-router"
       ]
     }
   }
