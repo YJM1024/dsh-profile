@@ -54,7 +54,6 @@
   name: "@deepseek-ai/dsh-compaction-basic"
   config:
     thresholdRatio: 0.1907
-    retainTokens: 10000
 - id: tool-result-pruner
   disabled: true
 - id: tool-subagent
