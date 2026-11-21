@@ -40,3 +40,8 @@
   disabled: true
 - id: dsh-profile-stats
   disabled: true
+- id: vision-router
+  name: dsh-vision-router
+  config:
+    progressiveTools: false
+    onboardingSeen: true
