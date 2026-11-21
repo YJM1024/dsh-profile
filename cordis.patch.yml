@@ -57,7 +57,6 @@
   config:
     provider: spawn
     toolName: subagent
-    agentOptions:
-      provider: deepseek-account
-      model: deepseek-flash
-      reasoningEffort: low
+    # 顶层 patch 到不了 preset 内的派单工具实例，这里写 agentOptions 不生效：
+    # 实测 2026-11-21 之后未显式传档位的子会话，request/header 的 reasoningEffort 全是 high（路由默认）。
+    # 降档按次在 subagent 调用上同时写 provider、model 与 reasoning_effort，口径见 rules/cost-efficiency.md 推理强度一节。
