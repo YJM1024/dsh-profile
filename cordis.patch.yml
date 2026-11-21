@@ -53,7 +53,7 @@
 - id: compaction-basic
   name: "@deepseek-ai/dsh-compaction-basic"
   config:
-    thresholdRatio: 0.143
+    thresholdRatio: 0.1907
     retainTokens: 10000
 - id: tool-result-pruner
   disabled: true
@@ -65,4 +65,4 @@
     agentOptions:
       provider: deepseek-account
       model: deepseek-flash
-      reasoningEffort: medium
+      reasoningEffort: low
