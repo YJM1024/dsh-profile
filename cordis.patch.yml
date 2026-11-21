@@ -38,3 +38,5 @@
   disabled: true
 - id: dsh-whale-widget
   disabled: true
+- id: dsh-profile-stats
+  disabled: true
