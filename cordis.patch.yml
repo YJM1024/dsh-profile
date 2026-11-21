@@ -50,10 +50,6 @@
   config:
     defaultProvider: sensevoice-local
     language: auto
-- id: compaction-basic
-  name: "@deepseek-ai/dsh-compaction-basic"
-  config:
-    thresholdRatio: 0.1907
 - id: tool-result-pruner
   disabled: true
 - id: tool-subagent
