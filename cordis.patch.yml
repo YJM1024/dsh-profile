@@ -45,3 +45,8 @@
   config:
     progressiveTools: false
     onboardingSeen: true
+- id: speech-to-text
+  name: "@deepseek-ai/dsh-experimental-speech-to-text"
+  config:
+    defaultProvider: sensevoice-local
+    language: auto
