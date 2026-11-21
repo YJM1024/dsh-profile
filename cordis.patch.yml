@@ -50,3 +50,19 @@
   config:
     defaultProvider: sensevoice-local
     language: auto
+- id: compaction-basic
+  name: "@deepseek-ai/dsh-compaction-basic"
+  config:
+    thresholdRatio: 0.143
+    retainTokens: 10000
+- id: tool-result-pruner
+  disabled: true
+- id: tool-subagent
+  name: "@deepseek-ai/dsh-tool-subagent"
+  config:
+    provider: spawn
+    toolName: subagent
+    agentOptions:
+      provider: deepseek-account
+      model: deepseek-flash
+      reasoningEffort: medium
